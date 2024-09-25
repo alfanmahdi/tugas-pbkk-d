@@ -279,3 +279,105 @@ Halaman About:
 
 Halaman Contact:
 ![Screenshot 2024-09-12 132346](https://github.com/user-attachments/assets/33472fe7-0f5f-4187-b00a-1058ab278ab9)
+
+## Update View Data
+
+Pertama, saya menambahkan data post pertama secara manual di `blog.blade.php` dengan tampilan berikut.
+
+![Post sederhana](<Screenshot 2024-09-26 045119-1.png>)
+
+Kemudian saya styling untuk mempercantik.
+
+![Styling post](<Screenshot 2024-09-26 045719.png>)
+
+Namun, penerapan di atas masih menggunakan data static yang berada di html, sehingga kemudian saya coba implementasikan supaya data diambil dari array yang dikirim dari Route. Di dalam `web.php`, saya mengubah nama Route yang awalnya blog menjadi posts, dan semua hal yang berkaitan dengannya. Lalu saya tambahkan data berupa array ke dalamnya.
+
+```
+Route::get('/posts', function () {
+    return view('posts', ['title' => 'Blog', 'posts' => [
+        [
+            'id' => 1,
+            'slug' => 'judul-artikel-1',
+            'title' => 'Judul Artikel 1',
+            'author' => 'Muhammad Alfan Mahdi',
+            'body' => 'Lorem ipsum, dolor sit amet consectetur adipisicing elit. Enim sunt in adipisci velitcum, nam repudiandae. Quas amet expedita nisi voluptates soluta quo blanditiis maiores? Dignissimos aut ipsa eveniet! Fuga!'
+        ],
+        [
+            'id' => 2,
+            'slug' => 'judul-artikel-2',
+            'title' => 'Judul Artikel 2',
+            'author' => 'Muhammad Alfan Mahdi',
+            'body' => 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Ullam, rem eius? Saepe hic voluptatibus asperiores voluptate libero tenetur. Laborum error dignissimos nostrum nobis porro itaque non rem fugiat? Quasi, neque!'
+        ]
+    ]]);
+});
+```
+
+Tidak lupa untuk menggunakan component yang sama untuk Navbar pada versi mobile.
+![Component Navbar untuk mobile](<Screenshot 2024-09-26 051137.png>)
+
+Selanjutnya, di `posts.blade.php`, saya coba memanggil data yang telah ditambahkan ke dalam array tadi.
+
+```
+@foreach ($posts as $post)
+    <article class="py-8 max-w-screen-md border-b border-gray-300">
+        <a href="/posts/{{ $post['slug'] }}" class="hover:underline">
+            <h2 class="mb-1 text-3xl tracking-tight font-bold text-gray-900">{{ $post['title'] }}</h2>
+        </a>
+        <div class="text-base text-gray-500">
+            <a href="#">{{ $post['author'] }}</a> | 1 January 2024
+        </div>
+        <p class="my-4 font-light">{{ Str::limit($post['body'], 150) }}</p>
+        <a href="/posts/{{ $post['slug'] }}" class="font-medium text-blue-500 hover:underline">Read more &raquo;</a>
+    </article>
+@endforeach
+```
+Berikut tampilan implementasi loop untuk mengambil data dari array.
+![Loop post](<Screenshot 2024-09-26 051859.png>)
+
+Sekarang, saya akan menampilkan isi dari suatu post apabila ditekan judul atau Read more. Saya membuat Route baru sebagai wildcard.
+
+```
+Route::get('/posts/{slug}', function($slug) {
+    $posts = [
+        [
+            'id' => 1,
+            'slug' => 'judul-artikel-1',
+            'title' => 'Judul Artikel 1',
+            'author' => 'Muhammad Alfan Mahdi',
+            'body' => 'Lorem ipsum, dolor sit amet consectetur adipisicing elit. Enim sunt in adipisci velitcum, nam repudiandae. Quas amet expedita nisi voluptates soluta quo blanditiis maiores? Dignissimos aut ipsa eveniet! Fuga!'
+        ],
+        [
+            'id' => 2,
+            'slug' => 'judul-artikel-2',
+            'title' => 'Judul Artikel 2',
+            'author' => 'Muhammad Alfan Mahdi',
+            'body' => 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Ullam, rem eius? Saepe hic voluptatibus asperiores voluptate libero tenetur. Laborum error dignissimos nostrum nobis porro itaque non rem fugiat? Quasi, neque!'
+        ]
+    ];
+
+    $post = Arr::first($posts, function($post) use ($slug) {
+        return $post['slug'] == $slug;
+    });
+
+    return view('post', ['title' => 'Single Post', 'post' => $post]);
+});
+```
+Sebelumnya saya menggunakan id untuk mencocokkan id dari suatu post yang ditekan. Namun yang paling terbaru, saya gunakan slug. Tidak lupa untuk membuat view baru yaitu `post.blade.php`.
+```
+<x-layout>
+    <x-slot:title>{{ $title }}</x-slot:title>
+
+    <article class="py-8 max-w-screen-md">
+        <h2 class="mb-1 text-3xl tracking-tight font-bold text-gray-900">{{ $post['title'] }}</h2>
+        <div class="text-base text-gray-500">
+            <a href="#">{{ $post['author'] }}</a> | 1 January 2024
+        </div>
+        <p class="my-4 font-light">{{ $post['body'] }}</p>
+        <a href="/posts" class="font-medium text-blue-500 hover:underline">&laquo; Back to posts</a>
+    </article>
+
+</x-layout>
+```
+Berikut tampilan terbaru.
+![Slug](<Screenshot 2024-09-26 054153-1.png>)
