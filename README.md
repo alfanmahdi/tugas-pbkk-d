@@ -510,3 +510,76 @@ public static function find($slug) {
 ```
 
 ![Post tidak ada](<Screenshot 2024-09-30 141431.png>)
+
+## Update Database & Migration
+
+Di file `.env` terdapat beberapa line yang perlu diperhatikan.
+
+```
+APP_NAME=Laravel
+APP_ENV=local
+APP_KEY=base64:y+et4Wf8YcdJPBQtife+kLU3lnjmT0WPjkddb7Mi5yU=
+APP_DEBUG=true
+APP_TIMEZONE=UTC
+APP_URL=http://localhost
+```
+
+Pada bagian ini environment dapat diubah menjadi local/development atau production.
+
+```
+DB_CONNECTION=sqlite
+```
+
+Default dari database yang digunakan adalah sqlite. Dapat digunakan TablePlus untuk dapat menampilkan database yang digunakan. Pertama perlu menambahkan koneksi ke TablePlus, memilih jenis db SQLite, lalu pilih file database.sqlite di dalam folder project laravel11. Untuk memindahkan tabel yang ada di dalam project Laravel ke TablePlus, perlu dilakukan migrasi. Berikut command-nya.
+
+```
+php artisan migrate
+```
+
+Sekarang mencoba membuat file migrasi baru berupa posts dengan command berikut.
+
+```
+php artisan make:migration create_posts_table
+```
+
+Lalu isikan di dalamnya atribut untuk tabel posts.
+
+```
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('posts', function (Blueprint $table) {
+            $table->id();
+            $table->string('title');
+            $table->string('author');
+            $table->string('slug')->unique();
+            $table->text('body');
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('posts');
+    }
+};
+```
+
+Lalu jalankan command berikut untuk me-migrasi ulang semua table.
+
+```
+php artisan migrate:fresh
+```
