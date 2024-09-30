@@ -284,7 +284,7 @@ Halaman Contact:
 
 Pertama, saya menambahkan data post pertama secara manual di `blog.blade.php` dengan tampilan berikut.
 
-![Post sederhana](<Screenshot 2024-09-26 045119-1.png>)
+![Post sederhana](<Screenshot 2024-09-26 045119.png>)
 
 Kemudian saya styling untuk mempercantik.
 
@@ -380,4 +380,133 @@ Sebelumnya saya menggunakan id untuk mencocokkan id dari suatu post yang ditekan
 </x-layout>
 ```
 Berikut tampilan terbaru.
-![Slug](<Screenshot 2024-09-26 054153-1.png>)
+![Slug](<Screenshot 2024-09-26 054153.png>)
+
+## Update Model
+
+### Membuat Class Post
+
+```
+class Post {
+    public static function all() {
+        return [
+            [
+                'id' => 1,
+                'slug' => 'judul-artikel-1',
+                'title' => 'Judul Artikel 1',
+                'author' => 'Muhammad Alfan Mahdi',
+                'body' => 'Lorem ipsum, dolor sit amet consectetur adipisicing elit. Enim sunt in adipisci velitcum, nam repudiandae. Quas amet expedita nisi voluptates soluta quo blanditiis maiores? Dignissimos aut ipsa eveniet! Fuga!'
+            ],
+            [
+                'id' => 2,
+                'slug' => 'judul-artikel-2',
+                'title' => 'Judul Artikel 2',
+                'author' => 'Muhammad Alfan Mahdi',
+                'body' => 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Ullam, rem eius? Saepe hic voluptatibus asperiores voluptate libero tenetur. Laborum error dignissimos nostrum nobis porro itaque non rem fugiat? Quasi, neque!'
+            ]
+        ];
+    }
+}
+```
+
+Dengan membuat Class Post di web.php, halaman Post maupun Posts dapat mengambil data dari Class, alih-alih membuat array satu persatu di setiap Route. Implementasi di Route berubah menjadi berikut.
+
+```
+Route::get('/posts', function () {
+    return view('posts', ['title' => 'Blog', 'posts' => Post::all()]);
+});
+
+Route::get('/posts/{slug}', function($slug) {
+
+    $post = Arr::first(Post::all(), function($post) use ($slug) {
+        return $post['slug'] == $slug;
+    });
+
+    return view('post', ['title' => 'Single Post', 'post' => $post]);
+});
+```
+**Note: Post::all()**
+
+Lalu kita pindahkan class Post ke dalam file Post.php di folder Models seperti berikut.
+
+```
+<?php
+
+class Post {
+    public static function all() {
+        return [
+            [
+                'id' => 1,
+                'slug' => 'judul-artikel-1',
+                'title' => 'Judul Artikel 1',
+                'author' => 'Muhammad Alfan Mahdi',
+                'body' => 'Lorem ipsum, dolor sit amet consectetur adipisicing elit. Enim sunt in adipisci velitcum, nam repudiandae. Quas amet expedita nisi voluptates soluta quo blanditiis maiores? Dignissimos aut ipsa eveniet! Fuga!'
+            ],
+            [
+                'id' => 2,
+                'slug' => 'judul-artikel-2',
+                'title' => 'Judul Artikel 2',
+                'author' => 'Muhammad Alfan Mahdi',
+                'body' => 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Ullam, rem eius? Saepe hic voluptatibus asperiores voluptate libero tenetur. Laborum error dignissimos nostrum nobis porro itaque non rem fugiat? Quasi, neque!'
+            ]
+        ];
+    }
+}
+```
+
+Namun class Post ini masih belum bisa diakses oleh Route. Sehingga perlu dibuat namespace agar Laravel tahu bahwa Post berada di folder App\Models.
+
+```
+namespace App\Models;
+```
+
+dan di Route (web.php) namespace tadi perlu dipanggil.
+
+```
+use App\Models\Post;
+```
+
+Lalu fungsi untuk mencari post mana yang dicari juga dipindahkan ke dalam Post.php dari web.php. Karena tugas pencarian atau perubahan data adalah tugas dari Model, bukan Route (Controller).
+
+```
+public static function find($slug) {
+    return Arr::first(static::all(), function($post) use ($slug) {
+       return $post['slug'] == $slug;
+    });
+}
+```
+
+dan di web.php dilakukan perubahan berikut.
+
+```
+Route::get('/posts/{slug}', function($slug) {
+
+    $post = Post::find($slug);
+
+    return view('post', ['title' => 'Single Post', 'post' => $post]);
+});
+```
+
+Apabila tidak ingin menggunakan use di function find, bisa menggunakan arrow function.
+
+```
+public static function find($slug) {
+    return Arr::first(static::all(), fn($post) => $post['slug'] == $slug);
+}
+```
+
+Sekarang menampilkan page 404 apabila user mencoba membuka post yang tidak ada.
+
+```
+public static function find($slug) {
+    $post = Arr::first(static::all(), fn($post) => $post['slug'] == $slug);
+
+    if(! $post) {
+        abort(404);
+    }
+
+    return $post;
+}
+```
+
+![Post tidak ada](<Screenshot 2024-09-30 141431.png>)
