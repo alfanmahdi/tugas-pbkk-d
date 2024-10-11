@@ -427,7 +427,7 @@ Route::get('/posts/{slug}', function($slug) {
 ```
 **Note: Post::all()**
 
-Lalu kita pindahkan class Post ke dalam file Post.php di folder Models seperti berikut.
+Lalu saya pindahkan class Post ke dalam file Post.php di folder Models seperti berikut.
 
 ```
 <?php
@@ -655,3 +655,51 @@ php artisan make:model Post -m
 ```
 
 Command di atas membuat model dengan nama Post dan migrasi dengan nama menyesuaikan nama model.
+
+## Update Model Factories
+
+Factories adalah fitur eloquent yang dapat membuat data dummy secara otomatis dan dengan jumlah yang banyak. Pertama saya membuat file factory agar dapat generate data untuk tabel post.
+
+```
+php artisan make:factory PostFactory
+```
+
+Lalu mengedit pada file PostFactory yang telah dibuat, dengan menambahkan field apa saja yang perlu dirandom.
+
+```
+<?php
+
+namespace Database\Factories;
+
+use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Factories\Factory;
+
+/**
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Post>
+ */
+class PostFactory extends Factory
+{
+    /**
+     * Define the model's default state.
+     *
+     * @return array<string, mixed>
+     */
+    public function definition(): array
+    {
+        return [
+            'title' => fake()->sentence(),
+            'author' => fake()->name(),
+            'slug' => Str::slug(fake()->sentence()),
+            'body' => fake()->text()
+        ];
+    }
+}
+```
+
+Agar nama yang digenerate berupa nama orang indonesia, pada file `.env` dapat mengubah `APP_FAKER_LOCALE=en_US` menjadi `APP_FAKER_LOCALE=id_ID`. Apabila sudah, dapat dicoba untuk digenerate dengan command `php artisan tinker` lalu
+
+```
+App\Models\Post::factory(200)->create()
+```
+
+![run factory 200 data dummy](<Screenshot 2024-10-11 163133.png>)
