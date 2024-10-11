@@ -583,3 +583,75 @@ Lalu jalankan command berikut untuk me-migrasi ulang semua table.
 ```
 php artisan migrate:fresh
 ```
+
+## Update Eloquent ORM & Post Model
+
+Untuk menggunakan model dari laravel, dapat langsung `extends Model` di file `Post.php`. Di dalam model, sudah terdapat method `all` dan `find`, sehingga dari versi sebelumnya, dapat dihapus. Apabila nama tabel di database bukan posts, maka dapat ditambahkan `protected $table = 'blog_posts';` untuk memberitahu bahwa tabel yang digunakan bernama blog_posts. Begitu pula apabila primary key bukan kolom id, dapat ditambahkan `protected $primaryKey = 'post_id'` untuk diidentifikasi sebagai primary key dari tabel tersebut.
+
+```
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Post extends Model
+{
+}
+```
+
+### Route Model Binding
+
+Pada `web.php`, coba mengambil satu buah post, dengan menggunakan instance dari post dengan tipe data Post, sehingga tidak diperlukan melakukan pencarian secara manual. Jika ingin menggunakan slug, tinggal menambahkan ketika mencar dengan `:slug`.
+
+```
+Route::get('/posts/{post:slug}', function(Post $post) {
+    return view('post', ['title' => 'Single Post', 'post' => $post]);
+});
+```
+
+### Menambahkan data menggunakan Tinker
+
+```
+php artisan tinker
+```
+
+Karena menggunakan Eloquent ORM, insert data ke Model, lalu dari Model diinsert ke dalam tabel. Sehingga panggil Model terlebih dahulu.
+
+```
+App\Models\Post::create([
+    'title' => 'Judul Artikel 1',
+    'author' => 'Sandhika Galih',
+    'slug' => 'judul-artikel-1',
+    'body' => 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Unde commodi consectetur iure. Consequatur quam, exercitationem, possimus sunt nam corrupti laboriosam in dolore inventore, commodi magnam totam amet reprehenderit! Qui, impedit.'
+]);
+```
+
+Dipastikan ketika menjalankan command di atas akan error. Perlu menambahkan line `protected $fillable = ['title', 'author', 'slug', 'body'];` ke dalam model.
+
+![insert data to model](<Screenshot 2024-10-11 141630.png>)
+
+Agar tampilan tanggal pada blog dapat lebih fleksibel, dapat mengubah line di dalam `post.blade.php` dan `posts.blade.php` menjadi berikut.
+
+```
+<a href="#">{{ $post['author'] }}</a> | {{ $post->created_at->diffForHumans() }}
+```
+
+![update tanggal](<Screenshot 2024-10-11 142312.png>)
+
+Dengan Eloquent dapat menggunakan beberapa command dengan fungsinya.
+`App\Models\Post::all()` menampilkan semua data.
+`$posts = App\Models\Post::all()` memasukkan ke dalam variabel.
+`$posts->first()` menampilkan data pertama.
+`$posts->last()` menampilkan data pertama.
+`$posts->find(4)` menampilkan data dengan id 4.
+`$post = $posts->find(4)` dan `$post->delete()` menampilkan data dengan id 4.
+
+### Membuat file model dengan Laravel
+
+```
+php artisan make:model Post -m
+```
+
+Command di atas membuat model dengan nama Post dan migrasi dengan nama menyesuaikan nama model.
