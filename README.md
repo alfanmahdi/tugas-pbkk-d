@@ -771,3 +771,162 @@ Route::get('/authors/{user}', function(User $user) {
 
 ![100 post 5 author](<Screenshot 2024-10-14 110720.png>)
 ![articles by author](<Screenshot 2024-10-14 110732.png>)
+
+## Update Post Category
+
+Membuat model Category beserta migrasi dan factory.
+
+```
+php artisan make:model Category -mf
+```
+
+Mengisi migrasi category
+```
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('categories', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('slug')->unique();
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('categories');
+    }
+};
+```
+
+Menambahkan category_id sebagai foreign key di migrasi post
+```
+$table->foreignId('category_id')->constrained(
+        table: 'categories',
+        indexName: 'posts_category_id'
+);
+```
+
+Mengisi model category
+```
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class Category extends Model
+{
+    use HasFactory;
+
+    public function posts(): HasMany
+    {
+        return $this->hasMany(Post::class);
+    }
+}
+```
+
+Di model post menambahkan relasi antar model post dan category
+```
+public function category(): BelongsTo
+{
+    return $this->belongsTo(Category::class);
+}
+```
+
+Mengisi factory category
+```
+<?php
+
+namespace Database\Factories;
+
+use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Factories\Factory;
+
+/**
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Category>
+ */
+class CategoryFactory extends Factory
+{
+    /**
+     * Define the model's default state.
+     *
+     * @return array<string, mixed>
+     */
+    public function definition(): array
+    {
+        return [
+            'name' => fake()->sentence(rand(1, 2), false),
+            'slug' => Str::slug(fake()->sentence(rand(1, 2), false))
+        ];
+    }
+}
+```
+
+Menambahkan category_id di factory post
+```
+'category_id' => Category::factory(),
+```
+
+Sekarang menjalankan migrasi dan menjalankan factory.
+
+Migrasi
+```
+php artisan migrate:fresh
+```
+
+Apabila tidak bisa menjalankan factory
+```
+composer dumpautoload
+```
+
+Lalu
+```
+php artisan optimize:clear
+```
+
+Saat `php artisan tinker`, dijalankan 3 factory sekaligus
+```
+App\Models\Post::factory(100)->recycle([Category::factory(3)->create(), User::factory(5)->create()])->create();
+```
+
+Agar dapat ditampilkan pada web, perlu mengedit post dan posts pada blade di bagian div mulai dari mengarahkan ke route baru.
+
+```
+<div">
+    By
+    <a href="/authors/{{ $post->author->username }}"
+        class="hover:underline text-base text-gray-500">{{ $post->author->name }}</a>
+    in
+    <a href="/categories/{{ $post->category->slug }}" class="hover:underline text-base text-gray-500">{{ $post->category->name }}</a> |
+    {{ $post->created_at->diffForHumans() }}
+</div>
+```
+
+Membuat route baru
+```
+Route::get('/categories/{category:slug}', function(Category $category) {
+    return view('posts', ['title' => 'Articles in: ' . $category->name, 'posts' => $category->posts]);
+});
+```
+
+![route blog](<Screenshot 2024-10-14 210319.png>) 
+![route authors](<Screenshot 2024-10-14 210331.png>)
+![route categories](<Screenshot 2024-10-14 210343.png>)
+![route single post](<Screenshot 2024-10-14 210401.png>)
