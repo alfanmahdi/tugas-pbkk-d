@@ -703,3 +703,71 @@ App\Models\Post::factory(200)->create()
 ```
 
 ![run factory 200 data dummy](<Screenshot 2024-10-11 163133.png>)
+
+## Update Eloquent Relationship
+
+Menghubungkan antar dua tabel memiliki hubungan seperti one to many atau many to many melalui eloquent.
+
+Pada file migrasi create_post_table.php, cukup mengubah line terkait author, karena akan diambil dari tabel author.
+
+```
+$table->string('author');
+```
+
+menjadi
+
+```
+$table->foreignId('author_id')->constrained(
+        table: 'users',
+        indexName: 'posts_author_id'
+);
+```
+
+Tidak lupa pada `PostFactory.php`, line `'author' => fake()->name()` diubah menjadi `'author_id' => User::Factory()` serta import class-nya.
+
+Lalu untuk menjalankan php artisan tinker, agar bisa generate 100 post namun hanya dengan 5 user/author, dijalankan command berikut.
+
+```
+App\Models\Post::factory(100)->recycle(Use::factory(5)->create())->create();
+```
+
+Kemudian mengatur hubungan antar tabel. Di `Post.php` ditambahkan
+
+```
+public function author(): BelongsTo
+{
+    return $this->belongsTo(User::class);
+}
+```
+
+dan di `User.php` ditambahkan
+
+```
+public function posts(): HasMany
+{
+    return $this->hasMany(Post::class, 'author_id');
+}
+```
+
+tidak lupa untuk import class masing-masing HasMany dan BelongsTo. Kemudian saya perbaiki UI di blade post dan posts.
+
+post
+```
+<a href="/authors/{{ $post->author->id }}">{{ $post->author->name }}</a> | {{ $post->created_at->diffForHumans() }}
+```
+
+posts
+```
+<a href="/authors/{{ $post->author->id }}" class="hover:underline">{{ $post->author->name }}</a> | {{ $post->created_at->diffForHumans() }}
+```
+
+dan menambahkan Route baru di `web.php` untuk halaman articles by author.
+
+```
+Route::get('/authors/{user}', function(User $user) {
+    return view('posts', ['title' => 'Articles by ' . $user->name, 'posts' => $user->posts]);
+});
+```
+
+![100 post 5 author](<Screenshot 2024-10-14 110720.png>)
+![articles by author](<Screenshot 2024-10-14 110732.png>)
