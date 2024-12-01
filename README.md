@@ -930,3 +930,39 @@ Route::get('/categories/{category:slug}', function(Category $category) {
 ![route authors](<Screenshot 2024-10-14 210331.png>)
 ![route categories](<Screenshot 2024-10-14 210343.png>)
 ![route single post](<Screenshot 2024-10-14 210401.png>)
+
+## Update Database Seeder
+
+Fitur database seeder di Laravel 11, memudahkan pengisian data dummy secara otomatis ke dalam database. Dengan seeder, dapat dilakukan migrasi dan pengisian data dalam satu langkah, serta menggabungkannya dengan factory untuk efisiensi yang lebih baik.
+
+DatabaseSeeder.php
+```
+$this->call([CategorySeeder::class, UserSeeder::class]);
+Post::factory(100)->recycle([
+    Category::all(),
+    User::all()
+])->create();
+```
+
+CategorySeeder.php
+```
+Category::create([
+    'name' => 'Web Design',
+    'slug' => 'web-design'
+]);
+...
+```
+
+UserSeeder.php
+```
+User::create([
+    'name' => 'Sandhika Galih',
+    'username' => 'sandhikagalih',
+    'email' => 'sandhikagalih@gmail.com',
+    'email_verified_at' => now(),
+    'password' => Hash::make('password'),
+    'remember_token' => Str::random(10)
+]);
+
+User::factory(5)->create();
+```
