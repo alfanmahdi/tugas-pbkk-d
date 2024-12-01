@@ -966,3 +966,38 @@ User::create([
 
 User::factory(5)->create();
 ```
+
+## Update N + 1 Problem
+
+Masalah N+1 di Laravel, mengilustrasikan bagaimana masalah tersebut menyebabkan kueri yang tidak efisien dan bagaimana solusi melalui eager loading dan lazy eager loading.
+
+Penerapan eager loading dan lazy eager loading di routes
+
+web.php
+```
+Route::get('/posts', function () {
+    $posts = Post::with(['author', 'category'])->latest()->get();
+    return view('posts', ['title' => 'Blog', 'posts' => $posts]);
+});
+
+Route::get('/authors/{user:username}', function(User $user) {
+    $posts = $user->posts->load('category', 'author');
+    return view('posts', ['title' => count($posts) . ' Articles by ' . $user->name, 'posts' => $posts]);
+});
+
+Route::get('/categories/{category:slug}', function(Category $category) {
+    $posts = $category->posts->load('category', 'author');
+    return view('posts', ['title' => 'Articles in: ' . $category->name, 'posts' => $posts]);
+});
+```
+
+Namun bisa juga tidak melalui routes, melainkan langsung di dalam Model Post.
+
+Post.php
+```
+protected $with = ['author', 'category'];
+```
+
+![n+1 blog](<Screenshot 2024-12-01 180310.png>)
+![n+1 author](<Screenshot 2024-12-01 180322.png>)
+![n+1 category](<Screenshot 2024-12-01 180329.png>)
